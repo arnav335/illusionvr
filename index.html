@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Dual Video Reverse/Forward Playback</title>
+</head>
+<body class="bg-gray-900 h-screen w-screen flex items-center justify-center">
+  <div id="videoContainer" class="relative w-full h-full">
+
+    <!-- Forward Video -->
+    <video id="forwardVid" class="w-full h-full object-cover absolute inset-0 hidden" src="forward.mp4"></video>
+
+    <!-- Reversed Video -->
+    <video id="reverseVid" class="w-full h-full object-cover absolute inset-0 hidden" src="reverse.mp4"></video>
+
+    <!-- Rewind Button -->
+    <button id="rewindBtn" class="absolute left-5 top-1/2 -translate-y-1/2 bg-gray-700 text-white px-4 py-2 rounded-lg select-none hidden"><--</button>
+
+    <!-- Forward Button -->
+    <button id="playBtn" class="absolute right-5 top-1/2 -translate-y-1/2 bg-gray-700 text-white px-4 py-2 rounded-lg select-none hidden">--></button>
+
+    <!-- START Button -->
+    <button id="startBtn" class="absolute inset-0 m-auto h-14 w-32 bg-white/20 text-white text-lg rounded-xl backdrop-blur-sm">START</button>
+
+  </div>
+
+  <script>
+    const container = document.getElementById("videoContainer");
+    const fVid = document.getElementById("forwardVid");
+    const rVid = document.getElementById("reverseVid");
+    const playBtn = document.getElementById("playBtn");
+    const rewindBtn = document.getElementById("rewindBtn");
+    const startBtn = document.getElementById("startBtn");
+
+    let durationLoaded = false;
+    let videoDuration = 0;
+
+    /* Load duration */
+    fVid.addEventListener("loadedmetadata", () => {
+      videoDuration = fVid.duration;
+      durationLoaded = true;
+    });
+    rVid.addEventListener("loadedmetadata", () => {
+      if (!durationLoaded) {
+        videoDuration = rVid.duration;
+        durationLoaded = true;
+      }
+    });
+
+    function showForwardVideo() {
+      rVid.classList.add("hidden");
+      fVid.classList.remove("hidden");
+    }
+
+    function showReverseVideo() {
+      fVid.classList.add("hidden");
+      rVid.classList.remove("hidden");
+    }
+
+    /* START BUTTON LOGIC */
+    startBtn.addEventListener("click", () => {
+      // Go fullscreen
+      if (container.requestFullscreen) container.requestFullscreen();
+      else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+
+      // Hide start button
+      startBtn.classList.add("hidden");
+
+      // Show controls
+      playBtn.classList.remove("hidden");
+      rewindBtn.classList.remove("hidden");
+
+      // Show forward video initially
+      fVid.classList.remove("hidden");
+    });
+
+    /* Forward Logic */
+    function forwardStart() {
+      if (!durationLoaded) return;
+      if (fVid.classList.contains("hidden")) {
+        const t = videoDuration - rVid.currentTime;
+        fVid.currentTime = Math.max(0, Math.min(videoDuration, t));
+      }
+      fVid.play();
+      setTimeout(() => showForwardVideo(), 50);
+    }
+    function forwardStop() { fVid.pause(); }
+
+    /* Rewind Logic */
+    function rewindStart() {
+      if (!durationLoaded) return;
+      if (rVid.classList.contains("hidden")) {
+        const t = videoDuration - fVid.currentTime;
+        rVid.currentTime = Math.max(0, Math.min(videoDuration, t));
+      }
+      rVid.play();
+      setTimeout(() => showReverseVideo(), 60);
+    }
+    function rewindStop() { rVid.pause(); }
+
+    /* Desktop events */
+    playBtn.addEventListener("mousedown", forwardStart);
+    playBtn.addEventListener("mouseup", forwardStop);
+    playBtn.addEventListener("mouseleave", forwardStop);
+
+    rewindBtn.addEventListener("mousedown", rewindStart);
+    rewindBtn.addEventListener("mouseup", rewindStop);
+    rewindBtn.addEventListener("mouseleave", rewindStop);
+
+    /* Mobile events */
+    playBtn.addEventListener("touchstart", e => { e.preventDefault(); forwardStart(); });
+    playBtn.addEventListener("touchend", forwardStop);
+    playBtn.addEventListener("touchcancel", forwardStop);
+
+    rewindBtn.addEventListener("touchstart", e => { e.preventDefault(); rewindStart(); });
+    rewindBtn.addEventListener("touchend", rewindStop);
+    rewindBtn.addEventListener("touchcancel", rewindStop);
+  </script>
+</body>
+</html>
